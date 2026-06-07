@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+import TrackList from './components/TrackList';
+import UploadModal from './components/UploadModal';
+import FabButton from './components/FabButton';
+import Header from './components/Header';
+
 function App() {
   const [tracks, setTracks] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [file, setFile] = useState(null);
 
-  // 1. Отримуємо список треків при завантаженні сторінки
+  const [search, setSearch] = useState('');
+
   const fetchTracks = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/music');
-      setTracks(response.data);
-    } catch (error) {
-      console.error("Помилка при завантаженні музики", error);
+      const res = await axios.get('http://localhost:5000/api/music');
+      setTracks(res.data);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -21,65 +29,71 @@ function App() {
     fetchTracks();
   }, []);
 
-  // 2. Функція завантаження файлу
   const handleUpload = async (e) => {
     e.preventDefault();
 
     if (!file || !title || !author) {
-      alert("Заповни всі поля!");
+      alert('Заповни всі поля!');
       return;
     }
 
     const formData = new FormData();
     formData.append('title', title);
     formData.append('author', author);
-    formData.append('musicFile', file); // 'musicFile' має збігатися з назвою в multer на сервері
+    formData.append('musicFile', file);
 
     try {
-      await axios.post('http://localhost:5000/api/music/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      alert("Трек успішно завантажено!");
-      // Очищуємо форму та оновлюємо список
+      await axios.post(
+        'http://localhost:5000/api/music/upload',
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+
       setTitle('');
       setAuthor('');
+      setFile(null);
+      setIsModalOpen(false);
+
       fetchTracks();
-    } catch (error) {
-      console.error("Помилка при завантаженні", error);
-      alert("Не вдалося завантажити файл");
+    } catch (err) {
+      console.error(err);
+      alert('Помилка завантаження');
     }
   };
 
   return (
-    <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
-      <h1>Music MakerTime</h1>
+    <div style={{ fontFamily: 'sans-serif', background: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
 
-      {/* ФОРМА ЗАВАНТАЖЕННЯ */}
-      <section style={{ marginBottom: '40px', border: '1px solid #ccc', padding: '20px', borderRadius: '10px' }}>
-        <h2>Додати новий трек</h2>
-        <form onSubmit={handleUpload}>
-          <input type="text" placeholder="Назва треку" value={title} onChange={(e) => setTitle(e.target.value)} /><br /><br />
-          <input type="text" placeholder="Автор" value={author} onChange={(e) => setAuthor(e.target.value)} /><br /><br />
-          <input type="file" onChange={(e) => setFile(e.target.files[0])} /><br /><br />
-          <button type="submit">Опублікувати</button>
-        </form>
-      </section>
+      {/* HEADER */}
+      <Header onSearch={setSearch} />
 
-      {/* СПИСОК ТРЕКІВ */}
-      <section>
-        <h2>Список треків</h2>
-        {tracks.length === 0 ? <p>Треків поки немає</p> : (
-          <ul>
-            {tracks.map(track => (
-              <li key={track.id} style={{ marginBottom: '10px' }}>
-                <strong>{track.title}</strong> — {track.author} 
-                <br />
-                <small style={{ color: '#666' }}>Файл: {track.file_name}</small>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {/* СТАНИЦЯ */}
+      <div style={{ padding: 20 }}>
+
+        {/* СПИСОК ТРЕКІВ */}
+        <TrackList
+          tracks={tracks.filter(t =>
+            t.title.toLowerCase().includes(search.toLowerCase()) ||
+            t.author.toLowerCase().includes(search.toLowerCase())
+          )}
+        />
+
+        {/* МОДАЛКА */}
+        <UploadModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleUpload}
+          title={title}
+          setTitle={setTitle}
+          author={author}
+          setAuthor={setAuthor}
+          setFile={setFile}
+        />
+
+        {/* КНОПКА + */}
+        <FabButton onClick={() => setIsModalOpen(true)} />
+
+      </div>
     </div>
   );
 }
