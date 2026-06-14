@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function Header({ onSearch }) {
+export default function Header({ onSearch, onUploadCover }) {
     const [query, setQuery] = useState('');
 
     const handleSearch = (e) => {
@@ -8,9 +8,17 @@ export default function Header({ onSearch }) {
         onSearch(e.target.value);
     };
 
+    // Функція, яка спрацьовує при виборі файлу
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file && onUploadCover) {
+            // Передаємо файл у батьківський компонент
+            onUploadCover(file); 
+        }
+    };
+
     return (
         <header style={styles.header}>
-
             <div style={styles.logo}>
                 <img
                     src="/NewLogo.png"
@@ -18,8 +26,6 @@ export default function Header({ onSearch }) {
                     style={styles.logoImg}
                 />
             </div>
-
-
 
             <div style={styles.searchBox}>
                 <input
@@ -30,7 +36,18 @@ export default function Header({ onSearch }) {
                 />
             </div>
 
-            <div style={styles.right}></div>
+            {/* Оновлена права частина із кнопкою завантаження */}
+            <div style={styles.right}>
+                <label style={styles.uploadBtn}>
+                    Додати обкладинку
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleFileChange} 
+                        style={styles.hiddenInput} 
+                    />
+                </label>
+            </div>
         </header>
     );
 }
@@ -51,28 +68,42 @@ const styles = {
         height: 40,
         objectFit: 'contain'
     },
-
     logo: {
         fontSize: 20,
         fontWeight: 'bold'
     },
-
     searchBox: {
         flex: 1,
         display: 'flex',
         justifyContent: 'center'
     },
-
     input: {
         width: '60%',
         maxWidth: 400,
         padding: '8px 12px',
         borderRadius: 20,
         border: 'none',
-        outline: 'none'
+        outline: 'none',
+        background: '#242424', // трохи світліший колір для фону інпуту
+        color: '#fff'
     },
-
     right: {
-        width: 120
+        display: 'flex',
+        justifyContent: 'flex-end',
+        minWidth: 150 // трохи збільшив, щоб помістився текст кнопки
+    },
+    uploadBtn: {
+        padding: '8px 14px',
+        background: '#1DB954', // зелений колір у стилі Spotify
+        color: '#fff',
+        borderRadius: 20,
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontWeight: '600',
+        transition: 'background 0.2s',
+        textAlign: 'center'
+    },
+    hiddenInput: {
+        display: 'none' // ховаємо стандартний сірий інпут для файлів
     }
 };
