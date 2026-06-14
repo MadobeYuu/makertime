@@ -13,8 +13,25 @@ function App() {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [file, setFile] = useState(null);
+  const [coverFile, setCoverFile] = useState(null); // Новое состояние для обложки
 
   const [search, setSearch] = useState('');
+
+  // Состояние темы (по умолчанию темная — true)
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  // Синхронизируем класс на теге body для глобального фона сайта
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.remove('light-theme');
+    } else {
+      document.body.classList.add('light-theme');
+    }
+  }, [isDarkMode]);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   const fetchTracks = async () => {
     try {
@@ -33,14 +50,18 @@ function App() {
     e.preventDefault();
 
     if (!file || !title || !author) {
-      alert('Заповни всі поля!');
+      alert('Заповни всі обов\'язкові поля!');
       return;
     }
 
     const formData = new FormData();
     formData.append('title', title);
     formData.append('author', author);
-    formData.append('musicFile', file);
+    formData.append('musicFile', file); // Ключ совпадает с серверным обработчиком
+    
+    if (coverFile) {
+      formData.append('coverFile', coverFile); // Передаем обложку, если она выбрана
+    }
 
     try {
       await axios.post(
@@ -49,9 +70,11 @@ function App() {
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
 
+      // Полная очистка полей после успешной отправки
       setTitle('');
       setAuthor('');
       setFile(null);
+      setCoverFile(null);
       setIsModalOpen(false);
 
       fetchTracks();
@@ -62,13 +85,23 @@ function App() {
   };
 
   return (
-    <div style={{ fontFamily: 'sans-serif', background: '#0f0f0f', minHeight: '100vh', color: 'white' }}>
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column',
+      background: isDarkMode ? '#121212' : '#f8f9fa',
+      transition: 'background 0.3s ease'
+    }}>
 
-      {/* HEADER */}
-      <Header onSearch={setSearch} />
+      {/* ШАПКА */}
+      <Header 
+        onSearch={setSearch} 
+        isDarkMode={isDarkMode} 
+        toggleTheme={toggleTheme} 
+      />
 
-      {/* СТАНИЦЯ */}
-      <div style={{ padding: 20 }}>
+      {/* СТРАНИЦЯ */}
+      <div style={{ flex: 1 }}>
 
         {/* СПИСОК ТРЕКІВ */}
         <TrackList
@@ -76,18 +109,23 @@ function App() {
             t.title.toLowerCase().includes(search.toLowerCase()) ||
             t.author.toLowerCase().includes(search.toLowerCase())
           )}
+          isDarkMode={isDarkMode}
         />
 
         {/* МОДАЛКА */}
         <UploadModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setCoverFile(null); // Очищаем обложку при закрытии
+          }}
           onSubmit={handleUpload}
           title={title}
           setTitle={setTitle}
           author={author}
           setAuthor={setAuthor}
           setFile={setFile}
+          setCoverFile={setCoverFile} // Передаем сеттер обложки в модалку
         />
 
         {/* КНОПКА + */}

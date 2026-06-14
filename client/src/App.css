@@ -1,28 +1,23 @@
+/* ========================================== */
+/* БАЗОВЫЕ СТИЛИ (ТЕМНАЯ ТЕМА ПО УМОЛЧАНИЮ)     */
+/* ========================================== */
+
 body {
   background: #121212;
+  color: #ffffff;
   font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
+/* Цвет заголовка "Список треків" по умолчанию */
+h2 {
+  color: white;
+  transition: color 0.3s ease;
 }
 
-.card {
-  background: #181818;
-  border-radius: 16px;
-  padding: 14px;
-  transition: 0.25s;
-  cursor: pointer;
-}
-
-.card:hover {
-  background: #232323;
-  transform: translateY(-5px);
-}
-
-/* COVER */
+/* COVER (Обложка трека, если используешь) */
 .cover {
   position: relative;
   width: 100%;
@@ -38,26 +33,22 @@ body {
   border-radius: 12px;
 }
 
-/* PLAY BUTTON (як Spotify) */
+/* КНОПКА PLAY (Большая круглая, если используешь) */
 .playBtn {
   position: absolute;
   bottom: 10px;
   right: 10px;
-
   width: 48px;
   height: 48px;
   border-radius: 50%;
   border: none;
-
   background: #1db954;
   color: black;
   font-size: 18px;
   font-weight: bold;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   box-shadow: 0 8px 20px rgba(0,0,0,0.5);
   transition: 0.2s;
 }
@@ -67,19 +58,29 @@ body {
   background: #1ed760;
 }
 
-/* TEXT */
-.info {
-  margin-top: 10px;
+/* АНИМАЦИЯ ПЕРЕКЛЮЧЕНИЯ ИКОНКИ СОЛНЦА / ЛУНЫ */
+@keyframes fadeInSpin {
+  from {
+    transform: rotate(-180deg) scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
 }
 
-.info h3 {
-  color: white;
-  font-size: 14px;
-  margin: 0;
+
+/* ========================================== */
+/* СВЕТЛАЯ ТЕМА (ПРИМЕНЯЕТСЯ ПРИ КЛИКЕ)        */
+/* ========================================== */
+
+body.light-theme {
+  background: #f8f9fa;
+  color: #121212;
 }
 
-.info p {
-  color: gray;
-  font-size: 12px;
-  margin: 0;
+/* Меняем цвет заголовка на темный */
+body.light-theme h2 {
+  color: #121212;
 }

@@ -1,59 +1,73 @@
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
+const fs = require("fs");
+const cors = require('cors');
 const db = require('./db'); // Твоє підключення до БД
 
 const app = express();
 
-// Мідлвари для звичайного JSON
+app.use(cors()); // Перенесли вверх для безопасности
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'static')));
 
-// Налаштування збереження файлів за допомогою Multer
+// Делаем папки доступными статически, чтобы файлы можно было скачивать/просматривать в браузере
+app.use('/covers', express.static(path.join(__dirname, 'covers')));
+app.use('/music-files', express.static(path.join(__dirname, 'music')));
+
+// Настройка Multer для обработки двух разных полей (аудио и обложка)
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Шлях до папки client/music відносно папки server
-        cb(null, path.join(__dirname, '../client/music'));
+        if (file.fieldname === 'coverFile') {
+            cb(null, path.join(__dirname, 'covers')); // Обложки летят в /covers
+        } else {
+            cb(null, path.join(__dirname, 'music'));  // Музыка летит в /music
+        }
     },
     filename: function (req, file, cb) {
-        // Зберігаємо оригінальне ім'я файлу (або можна додати Date.now() для унікальності)
-        cb(null, file.originalname);
+        // Чтобы избежать дубликатов имён, можно добавить временную метку
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        const baseName = path.basename(file.originalname, ext);
+        cb(null, `${baseName}-${uniqueSuffix}${ext}`);
     }
 });
 
 const upload = multer({ storage: storage });
 
-const cors = require('cors');
-app.use(cors()); // Додай це перед маршрутами (routes)
-
-// 1. РОУТ ДЛЯ ЗАВАНТАЖЕННЯ МУЗИКИ (Файл + Метадані)
-// 'musicFile' — це ім'я поля (name), яке надсилатиметься з фронтенду
-app.post('/api/music/upload', upload.single('musicFile'), async (req, res) => {
+// 1. РОУТ ДЛЯ ЗАВАНТАЖЕННЯ МУЗИКИ ТА ОБКЛАДИНКИ
+// Принимаем сразу два файла с ключами: 'musicFile' та 'coverFile'
+app.post('/api/music/upload', upload.fields([
+    { name: 'musicFile', maxCount: 1 },
+    { name: 'coverFile', maxCount: 1 }
+]), async (req, res) => {
     try {
-        // Отримуємо назву та автора з тіла запиту (req.body)
         const { title, author } = req.body;
 
-        // Перевіряємо, чи файл успішно завантажився
-        if (!req.file) {
-            return res.status(400).json({ error: 'Файл не завантажено' });
+        // Проверяем наличие файлов в объекте req.files
+        const musicFile = req.files && req.files['musicFile'] ? req.files['musicFile'][0] : null;
+        const coverFile = req.files && req.files['coverFile'] ? req.files['coverFile'][0] : null;
+
+        if (!musicFile) {
+            return res.status(400).json({ error: 'Аудіофайл не завантажено' });
         }
 
-        // Ім'я файлу, під яким він зберігся у client/music
-        const fileName = req.file.filename;
-
-        // Перевірка на заповненість полів
         if (!title || !author) {
             return res.status(400).json({ error: 'Будь ласка, вкажіть назву та автора' });
         }
 
-        // Записуємо дані в MySQL
-        const query = 'INSERT INTO tracks (title, author, file_name) VALUES (?, ?, ?)';
-        await db.query(query, [title, author, fileName]);
+        const trackFileName = musicFile.filename;
+        // Якщо обкладинку не завантажили, запишемо NULL (або дефолтне значення на фронті)
+        const coverFileName = coverFile ? coverFile.filename : null;
+
+        // Записуємо дані в MySQL (використовуємо cover_name як просив)
+        const query = 'INSERT INTO tracks (title, author, file_name, cover_name) VALUES (?, ?, ?, ?)';
+        await db.query(query, [title, author, trackFileName, coverFileName]);
 
         res.status(201).json({
-            message: 'Трек успішно завантажено та збережено в БД!',
-            track: { title, author, fileName }
+            message: 'Трек та обкладинку успішно завантажено!',
+            track: { title, author, fileName: trackFileName, coverName: coverFileName }
         });
 
     } catch (error) {
@@ -65,6 +79,7 @@ app.post('/api/music/upload', upload.single('musicFile'), async (req, res) => {
 // 2. РОУТ ДЛЯ ОТРИМАННЯ ВСЬОГО СПИСКУ МУЗИКИ
 app.get('/api/music', async (req, res) => {
     try {
+        // Убедись, что колонка cover_name выбрана из базы данных
         const [rows] = await db.query('SELECT * FROM tracks ORDER BY created_at DESC');
         res.json(rows);
     } catch (error) {
@@ -73,11 +88,10 @@ app.get('/api/music', async (req, res) => {
     }
 });
 
-const fs = require("fs");
-
 // STREAM AUDIO (MP3)
 function getAudio(req, res) {
-    const audioPath = path.resolve(__dirname, "static", req.filename);
+    // Внимание: твои файлы теперь хранятся в папке "music", а не "static"! Исправлено здесь:
+    const audioPath = path.resolve(__dirname, "music", req.filename);
 
     if (!fs.existsSync(audioPath)) {
         return res.status(404).send("Audio file not found");
@@ -85,7 +99,6 @@ function getAudio(req, res) {
 
     const stat = fs.statSync(audioPath);
     const fileSize = stat.size;
-
     const range = req.headers.range;
 
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -110,13 +123,11 @@ function getAudio(req, res) {
         });
 
         file.pipe(res);
-
     } else {
         res.writeHead(200, {
             "Content-Type": "audio/mpeg",
             "Content-Length": fileSize
         });
-
         fs.createReadStream(audioPath).pipe(res);
     }
 }
@@ -124,11 +135,7 @@ function getAudio(req, res) {
 app.get("/music/:id", async (req, res, next) => {
     try {
         const id = req.params.id;
-
-        const [rows] = await db.query(
-            "SELECT * FROM tracks WHERE id = ?",
-            [id]
-        );
+        const [rows] = await db.query("SELECT * FROM tracks WHERE id = ?", [id]);
 
         if (rows.length === 0) {
             return res.status(404).send("Track not found");
@@ -136,7 +143,6 @@ app.get("/music/:id", async (req, res, next) => {
 
         req.filename = rows[0].file_name;
         next();
-
     } catch (error) {
         console.error("DB error:", error);
         res.status(500).send("Server error");

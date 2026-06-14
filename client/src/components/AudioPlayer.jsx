@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function AudioPlayer({ src, title, author }) {
+export default function AudioPlayer({ src, title, author, isDarkMode }) {
   const audioRef = useRef(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -50,12 +50,29 @@ export default function AudioPlayer({ src, title, author }) {
       />
 
       <div className="player-header">
-        <div className="title">{title}</div>
-        <div className="author">{author}</div>
+        {/* Цвет названия меняется в зависимости от темы */}
+        <div className="title" style={{ color: isDarkMode ? "white" : "#121212", fontWeight: "bold" }}>
+          {title}
+        </div>
+        {/* Цвет автора меняется в зависимости от темы */}
+        <div className="author" style={{ color: isDarkMode ? "gray" : "#666", fontSize: 12, marginTop: 2 }}>
+          {author}
+        </div>
       </div>
 
-      <div className="controls">
-        <button className="play-btn" onClick={togglePlay}>
+      <div className="controls" style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+        <button 
+          className="play-btn" 
+          onClick={togglePlay}
+          style={{
+            background: "none",
+            border: "none",
+            color: isDarkMode ? "white" : "#121212",
+            fontSize: 16,
+            cursor: "pointer",
+            padding: 0
+          }}
+        >
           {isPlaying ? "⏸" : "▶"}
         </button>
 
@@ -66,9 +83,10 @@ export default function AudioPlayer({ src, title, author }) {
           max={duration || 0}
           value={progress}
           onChange={handleSeek}
+          style={{ flex: 1, accentColor: "#1db954", cursor: "pointer" }}
         />
 
-        <div className="time">
+        <div className="time" style={{ color: isDarkMode ? "gray" : "#666", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
           {format(progress)} / {format(duration)}
         </div>
       </div>
