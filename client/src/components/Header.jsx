@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function Header({ onSearch, onUploadCover, isDarkMode, toggleTheme }) {
+export default function Header({ onSearch, isDarkMode, toggleTheme }) {
     const [query, setQuery] = useState('');
 
     const handleSearch = (e) => {
@@ -8,19 +8,16 @@ export default function Header({ onSearch, onUploadCover, isDarkMode, toggleThem
         onSearch(e.target.value);
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file && onUploadCover) {
-            onUploadCover(file); 
-        }
-    };
-
     return (
         <header style={{
             ...styles.header,
-            background: isDarkMode ? '#121212' : '#ffffff',
-            borderBottom: isDarkMode ? '1px solid #222' : '1px solid #e0e0e0'
+            background: isDarkMode ? 'rgba(18, 18, 18, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: isDarkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)'
         }}>
+            <style>{animationStyles}</style>
+
             <div style={styles.logo}>
                 <img
                     src="/NewLogo.png"
@@ -36,36 +33,43 @@ export default function Header({ onSearch, onUploadCover, isDarkMode, toggleThem
                     placeholder="Пошук треків..."
                     style={{
                         ...styles.input,
-                        background: isDarkMode ? '#242424' : '#f1f3f5',
+                        background: isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                         color: isDarkMode ? '#fff' : '#121212',
-                        border: isDarkMode ? 'none' : '1px solid #ced4da'
+                        border: 'none'
                     }}
                 />
             </div>
 
             <div style={styles.right}>
-                {/* КНОПКА ПЕРЕКЛЮЧЕНИЯ ТЕМЫ */}
                 <button 
                     onClick={toggleTheme} 
                     style={{
                         ...styles.themeBtn,
-                        color: isDarkMode ? '#f5c518' : '#ff8c00'
+                        color: isDarkMode ? '#FFD700' : '#FF8C00'
                     }}
                     type="button"
+                    className="theme-toggle-btn"
                 >
                     {isDarkMode ? (
-                        // Луна
-                        <svg style={styles.icon} viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.3 22h-.1c-5.5 0-10-4.5-10-10 0-4.8 3.5-8.9 8.2-9.8.5-.1 1 .2 1.2.7.2.5 0 1.1-.4 1.4-2.8 1.9-4.2 5.4-3.5 8.8.7 3.2 3.3 5.8 6.5 6.5 3.4.7 6.9-.7 8.8-3.5.3-.4.9-.6 1.4-.4.5.2.8.7.7 1.2-.9 4.7-5 8.2-9.8 8.2z"/>
+                        /* Ідеальний очищений Місяць без артефактів */
+                        <svg className="icon-moon" style={styles.icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                         </svg>
                     ) : (
-                        // Солнце
-                        <svg style={styles.icon} viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-12c.55 0 1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1v1c0 .55.45 1 1 1zm0 16c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1s1-.45 1-1v-1c0-.55-.45-1-1-1zm9-7h-1c-.55 0-1 .45-1 1s.45 1 1 1h1c.55 0 1-.45 1-1s-.45-1-1-1zM4 12c0-.55-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1h1c.55 0 1-.45 1-1zm14.44-6.34c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0l-.7.7c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l.7-.7zM6.66 16.64c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l.7.7c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41l-.7-.7zm11.08 1.41c.39.39 1.02.39 1.41 0s.39-1.02 0-1.41l-.7-.7c-.39-.39-1.02-.39-1.41 0s-.39 1.02 0 1.41l.7.7zM6.66 6.66l.7-.7c.39-.39.39-1.02 0-1.41s-1.02-.39-1.41 0l-.7.7c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0z"/>
+                        /* Ідеалне Сонце з геометрично рівними променями */
+                        <svg className="icon-sun" style={styles.icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                         </svg>
                     )}
                 </button>
-
             </div>
         </header>
     );
@@ -78,17 +82,19 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '12px 20px',
+        padding: '12px 24px',
         zIndex: 1000,
         transition: 'background 0.3s ease, border-color 0.3s ease',
     },
     logoImg: {
-        height: 40,
+        height: 36,
         objectFit: 'contain'
     },
     logo: {
         fontSize: 20,
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        display: 'flex',
+        alignItems: 'center'
     },
     searchBox: {
         flex: 1,
@@ -96,48 +102,66 @@ const styles = {
         justifyContent: 'center'
     },
     input: {
-        width: '60%',
-        maxWidth: 400,
-        padding: '8px 12px',
-        borderRadius: 20,
+        width: '80%',
+        maxWidth: 440,
+        padding: '10px 16px',
+        borderRadius: 99,
         outline: 'none',
-        transition: 'background 0.3s ease, color 0.3s ease, border-color 0.3s ease'
+        fontSize: '14px',
+        transition: 'all 0.3s ease'
     },
     right: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-end',
-        gap: '15px',
-        minWidth: 200 
+        gap: '16px',
+        minWidth: 60
     },
     themeBtn: {
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-        padding: '6px',
+        padding: '8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         outline: 'none',
+        borderRadius: '50%',
+        transition: 'background 0.2s ease',
     },
     icon: {
         width: '24px',
         height: '24px',
-        animation: 'fadeInSpin 0.4s ease-out'
-    },
-    uploadBtn: {
-        padding: '8px 14px',
-        background: '#1DB954', 
-        color: '#fff',
-        borderRadius: 20,
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: '600',
-        transition: 'background 0.2s',
-        textAlign: 'center',
-        whiteSpace: 'nowrap'
-    },
-    hiddenInput: {
-        display: 'none' 
+        pointerEvents: 'none',
     }
 };
+
+const animationStyles = `
+  .icon-sun {
+    animation: sunAppear 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .icon-moon {
+    animation: moonAppear 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .theme-toggle-btn {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .theme-toggle-btn:hover {
+    transform: scale(1.1);
+  }
+  .theme-toggle-btn:active {
+    transform: scale(0.95);
+  }
+
+  @keyframes sunAppear {
+    0% { transform: rotate(-60deg) scale(0.3); opacity: 0; }
+    100% { transform: rotate(0deg) scale(1); opacity: 1; }
+  }
+
+  @keyframes moonAppear {
+    0% { transform: rotate(30deg) scale(0.5); opacity: 0; }
+    100% { transform: rotate(0deg) scale(1); opacity: 1; }
+  }
+`;

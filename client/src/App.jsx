@@ -5,22 +5,31 @@ import TrackList from './components/TrackList';
 import UploadModal from './components/UploadModal';
 import FabButton from './components/FabButton';
 import Header from './components/Header';
+import NowPlayingSidebar from "./components/NowPlayingSidebar"; // Путь исправлен :)
 
 function App() {
   const [tracks, setTracks] = useState([]);
+  const [currentTrack, setCurrentTrack] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeView, setActiveView] = useState('all'); // Добавили состояние навигации
 
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [file, setFile] = useState(null);
-  const [coverFile, setCoverFile] = useState(null); // Новое состояние для обложки
+  const [coverFile, setCoverFile] = useState(null); 
 
   const [search, setSearch] = useState('');
-
-  // Состояние темы (по умолчанию темная — true)
   const [isDarkMode, setIsDarkMode] = useState(true);
 
-  // Синхронизируем класс на теге body для глобального фона сайта
+  // Вычисляем индекс текущего трека
+  const currentIndex = tracks.findIndex(t => t.id === currentTrack?.id);
+
+  // Фильтрация треков по поиску
+  const filteredTracks = tracks.filter(t =>
+    t.title.toLowerCase().includes(search.toLowerCase()) ||
+    t.author.toLowerCase().includes(search.toLowerCase())
+  );
+
   useEffect(() => {
     if (isDarkMode) {
       document.body.classList.remove('light-theme');
@@ -57,10 +66,10 @@ function App() {
     const formData = new FormData();
     formData.append('title', title);
     formData.append('author', author);
-    formData.append('musicFile', file); // Ключ совпадает с серверным обработчиком
+    formData.append('musicFile', file);
     
     if (coverFile) {
-      formData.append('coverFile', coverFile); // Передаем обложку, если она выбрана
+      formData.append('coverFile', coverFile);
     }
 
     try {
@@ -70,7 +79,6 @@ function App() {
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
 
-      // Полная очистка полей после успешной отправки
       setTitle('');
       setAuthor('');
       setFile(null);
@@ -101,15 +109,28 @@ function App() {
       />
 
       {/* СТРАНИЦЯ */}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, display: 'flex', position: 'relative' }}>
 
         {/* СПИСОК ТРЕКІВ */}
-        <TrackList
-          tracks={tracks.filter(t =>
-            t.title.toLowerCase().includes(search.toLowerCase()) ||
-            t.author.toLowerCase().includes(search.toLowerCase())
-          )}
+        <div style={{ flex: 1 }}>
+          {/* Здесь при необходимости можно фильтровать треки в зависимости от activeView, например: activeView === 'favorites' */}
+          <TrackList
+            tracks={filteredTracks}
+            isDarkMode={isDarkMode}
+            onTrackSelect={setCurrentTrack}
+            activeTrackId={currentTrack?.id}
+          />
+        </div>
+
+        {/* ПЛЕЕР / САЙДБАР */}
+        <NowPlayingSidebar
+          track={currentTrack}
           isDarkMode={isDarkMode}
+          onClose={() => setCurrentTrack(null)}
+          onPrev={() => setCurrentTrack(tracks[currentIndex - 1])}
+          onNext={() => setCurrentTrack(tracks[currentIndex + 1])}
+          hasPrev={currentIndex > 0}
+          hasNext={currentIndex >= 0 && currentIndex < tracks.length - 1}
         />
 
         {/* МОДАЛКА */}
@@ -117,7 +138,7 @@ function App() {
           isOpen={isModalOpen}
           onClose={() => {
             setIsModalOpen(false);
-            setCoverFile(null); // Очищаем обложку при закрытии
+            setCoverFile(null);
           }}
           onSubmit={handleUpload}
           title={title}
@@ -125,11 +146,16 @@ function App() {
           author={author}
           setAuthor={setAuthor}
           setFile={setFile}
-          setCoverFile={setCoverFile} // Передаем сеттер обложки в модалку
+          setCoverFile={setCoverFile}
         />
 
-        {/* КНОПКА + */}
-        <FabButton onClick={() => setIsModalOpen(true)} />
+        {/* КНОПКА + И НАВИГАЦИЯ (Обновлено) */}
+        <FabButton
+          isDarkMode={isDarkMode}
+          activeView={activeView}
+          onNavigate={setActiveView}
+          onAddClick={() => setIsModalOpen(true)}
+        />
 
       </div>
     </div>
